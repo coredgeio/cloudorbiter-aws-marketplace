@@ -1,2 +1,2 @@
-# cloudorbiter-aws-marketplace
+# Cloudorbiter-aws-marketplace
 Installing Cloud Orbiter on AWS Marketplace
