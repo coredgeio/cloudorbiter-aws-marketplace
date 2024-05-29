@@ -1,4 +1,4 @@
-# Cloudorbiter-Aws-Marketplace
+# Cloud Orbiter - AWS Marketplace
 <!-- ABOUT THE PROJECT -->
 In this document we will cover the deployment of Cloud Orbiter on AWS EKS. Here we are going to use a dual load balancer deployment, where the Frontend and the controller will exposed separately.
 
@@ -12,7 +12,69 @@ In this document we will cover the deployment of Cloud Orbiter on AWS EKS. Here 
 9. Domain URLs for public endpoint
 10. Creds to pull images if required
 11. Github Access Token for cluster-manager service
-12. S3 Endpoint and user access and secret key to enable container registry service
+
+## Installation
+
+1. In your EKS cluster, create namespace compass and create a tls secret with your SSL/TLS certs
+```
+kubectl create ns compass
+kubectl create secret tls domain-tls -n compass --cert=xyz_fullchain.crt --key=xyz_privkey.key
+```
+
+2. Modify below parameters in the below override values.yaml file accordingly. (Below parameter values are just an example)
+```
+global.domain: &compassDomain "console.xyz.com"
+global.controllerDNSName: &controllerDomainName "console.xyz.com"
+global.frontend.certs.external: "domain-tls"
+clusterManager.github.token: "<github token with repo read access>"
+```
+
+3. Deploy the Helm Chart using below commands
+```
+helm pull oci://709825985650.dkr.ecr.us-east-1.amazonaws.com/coredge-io/orbiter-helm-chart --version 1.0.0
+helm install -f <override-values-file> compass orbiter-helm-chart-1.0.0.tgz -n compass
+```
+
+4. Check the resources after installation. (Below pods must be running after successful installation)
+```
+kubectl get pod -n compass
+``` 
+
+5. Once installed, check the ```frontend``` and ```compass-controller``` service for following annotations. If not proper, add the following
+```
+annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+```
+
+6. Make CNAME record in your DNS for the Cloud Orbiter endpoint accordingly (in our example - 'console.xyz.com'). 
+If using Route53, see below screenshot to create a CNAME record. 
+![Landing Page](img/cname-record-route53.webp)
+<p align="center">Landing Page</p>
+
+Refer this guide to create a CNAME record [Creating CNAME record on Amazon Route53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-creating.html)
+
+Note: You can get the DNS name for the NLB assigned by executing the below command 
+```
+kubectl get svc frontend -n compass
+```
+
+7. Access the GUI using the Domain URL provided in Step 3. You should see landing page like below for Cloud Orbiter GUI.
+![Landing Page](img/landing-page.png)
+<p align="center">Landing Page</p>
+
+![Login Page](img/login-page.png)
+<p align="center">Login Page</p>
+
+NOTE: Default Login creds for Cloud Orbiter 
+```
+username: admin
+password: Orbiter@123
+```
+
+    
+NOTE: Deployment also creates a ```kubeguardian-server-ingress``` when ingress flag is enabled. This object is not being used and as the nginx reverse proxy/compass-api is handling the routes internally
 
 ## Override Values File for Helm Deployment - 
 Note: Make changes as needed in the below override values.yaml
@@ -273,48 +335,4 @@ keycloak:
     # keycloak master password
     password: admin@kg
 
-container-registry:
-  replicaCount:
-    containerRegistry: 1
-  storage:
-    # prefix for bucket name for registries should be configured here
-    # default prefix will be added if nothing is configured
-    bucketPrefix: ""
-    #s3:
-    #  endpoint: http://192.168.100.177:8000
-    #  accessKey: 3ZU12D2N4WS0Y9MPWS5H
-    #  secretKey: F9AJPAnp6vGLKr1SzeaGxgdcuUi33A4fKVuhl7Jg
-
 ```
-
-## Installation
-1. Pull the the stable/latest helm package .tgz file for Cloud Orbiter to deploy.
-```
-helm pull oci://709825985650.dkr.ecr.us-east-1.amazonaws.com/coredge-io/orbiter-helm-chart:v1.0.0
-```
-
-2. Create the secret for  in compass namespace and then install the helm
-```
-kubectl create ns compass
-kubectl create secret tls domain-tls -n compass --cert=xyz_fullchain.crt --key=xyz_privkey.key
-helm install -f <values-file> compass compass -n compass
-```
-
-3. Check installation
-```
-kubectl get po -n compass
-``` 
-
-4. Once installed, check the ‘frontend' and 'compass-controller’ service for following annotations. If not proper, add the following
-```
-annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: external
-    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
-    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-```
-
-5. Make DNS entries for the frontend and controller endpoint accordingly
-
-6. Access the GUI
-    
-NOTE: Deployment also creates a kubeguardian-server-ingress when ingress flag is enabled. See snippet below. This object is not being used and as the nginx reverse proxy/compass-api is handling the routes internally
