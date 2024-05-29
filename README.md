@@ -290,6 +290,9 @@ container-registry:
 
 ## Installation
 1. Pull the the stable/latest helm package .tgz file for Cloud Orbiter to deploy.
+```
+helm pull oci://709825985650.dkr.ecr.us-east-1.amazonaws.com/coredge-io/orbiter-helm-chart:v1.0.0
+```
 
 2. Create the secret for  in compass namespace and then install the helm
 ```
