@@ -14,11 +14,10 @@ In this document we will cover the deployment of Cloud Orbiter on AWS EKS. Here 
 11. Github Access Token for cluster-manager service
 12. S3 Endpoint and user access and secret key to enable container registry service
 
-## Values File for Helm Deployment (Make changes as needed)
-* Sample values.yaml :-
+## Override Values File for Helm Deployment - 
+Note: Make changes as needed in the below override values.yaml
 
 ```
-
 global:
   # deployment environment indication for deployer to enable relevant
   # environment specific configuration, currentely only environment
