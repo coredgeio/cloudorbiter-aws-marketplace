@@ -72,9 +72,10 @@ username: admin
 password: Orbiter@123
 ```
 Login creds can be modified by changing the ```controller.username``` & ```controller.password``` parameters !
-
     
 NOTE: Deployment also creates a ```kubeguardian-server-ingress``` when ingress flag is enabled. This object is not being used and as the nginx reverse proxy/compass-api is handling the routes internally
+
+For Cloud Orbiter user guides and documentation please refer [Cloud Orbiter Docs](https://docs.cloudorbiter.io/)
 
 ## Override Values File for Helm Deployment - 
 Note: Make changes as needed in the below override values.yaml
