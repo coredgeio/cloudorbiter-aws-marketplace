@@ -7,10 +7,10 @@ In this document we will cover the deployment of Cloud Orbiter on AWS EKS. Here 
 2. At least one public subnet in your cluster VPC
 3. Storage Class configured (gp2/gp3/or any other)
 4. AWS Load Balancer Controller configured
-5. Bidirectional Ports 443, 6443, 8030, 8040 open in EKS nodepool secgrp
-8. Single TLS/SSL cert for Clour Orbiter public endpoint
-9. Domain URLs for public endpoint
-10. Github Access Token for cluster-manager service
+5. Bidirectional Ports 443, 6443, 8030, 8040 open publicly from LB 
+6. Single TLS/SSL cert for Clour Orbiter public endpoint
+7. Domain URLs for public endpoint
+8. Github Access Token for cluster-manager service
 
 ## Installation
 
@@ -20,24 +20,26 @@ kubectl create ns compass
 kubectl create secret tls domain-tls -n compass --cert=xyz_fullchain.crt --key=xyz_privkey.key
 ```
 
-2. Modify below parameters in the below override values.yaml file accordingly. (Below parameter values are just an example)
+2. Modify below parameters in the below override values.yaml file accordingly. (*Below parameter values are just an example*)
 ```
 global.domain: &compassDomain "console.xyz.com"
-global.controllerDNSName: &controllerDomainName "console.xyz.com"
+global.controllerDNSName: &controllerDomainName "console.xyz.com" 
 global.frontend.certs.external: "domain-tls"
 clusterManager.github.token: "<github token with repo read access>"
 ```
 
-3. Deploy the Helm Chart using below commands
+3. Deploy the Helm Chart using below commands (*scroll down for the override values file*)
 ```
-helm pull oci://709825985650.dkr.ecr.us-east-1.amazonaws.com/coredge-io/orbiter-helm-chart --version 1.0.0
-helm install -f <override-values-file> compass orbiter-helm-chart-1.0.0.tgz -n compass
+helm pull oci://709825985650.dkr.ecr.us-east-1.amazonaws.com/coredge-io/orbiter-helm-chart --version 1.0.1
+helm install -f <override-values-file> compass orbiter-helm-chart-1.0.1.tgz -n compass
 ```
 
 4. Check the resources after installation. (Below pods must be running after successful installation)
 ```
 kubectl get pod -n compass
 ``` 
+![Landing Page](img/cloud-orbiter-pod-resources.png)
+<p align="center">Deployment Pod Resources</p>
 
 5. Once installed, check the ```frontend``` and ```compass-controller``` service for following annotations. If not proper, add the following
 ```
@@ -46,8 +48,14 @@ annotations:
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
 ```
+Endpoint service should show like below. 
+```
+kubectl get svc frontend -n compass
+```
+![Landing Page](img/cloud-orbiter-frontend-service.png)
+<p align="center">LB Endpoint for Cloud Orbiter</p>
 
-6. Make CNAME record in your DNS for the Cloud Orbiter endpoint accordingly (in our example - 'console.xyz.com'). 
+6. Make CNAME record in your DNS for the Cloud Orbiter endpoint accordingly (*in our example - 'console.xyz.com'*). 
 If using Route53, see below screenshot to create a CNAME record. 
 ![Landing Page](img/cname-record-route53.webp)
 <p align="center">Landing Page</p>
@@ -75,7 +83,7 @@ Login creds can be modified by changing the ```controller.username``` & ```contr
     
 NOTE: Deployment also creates a ```kubeguardian-server-ingress``` when ingress flag is enabled. This object is not being used and as the nginx reverse proxy/compass-api is handling the routes internally
 
-For Cloud Orbiter user guides and documentation please refer [Cloud Orbiter Docs](https://docs.cloudorbiter.io/)
+**For Cloud Orbiter user guides and documentation please refer** [Cloud Orbiter Docs](https://docs.cloudorbiter.io/)
 
 ## Override Values File for Helm Deployment - 
 Note: Make changes as needed in the below override values.yaml
